@@ -1,0 +1,13 @@
+## Enable SH Cluster
+
+{% set cluster_secret = "PasswordHere" %}
+{% set rep_factor = 2 %}
+{% set search_factor = 2 %}
+{% set sh_cluster_label = ryeloor_sh_cluster %}
+{% set index_cluster_label = ryeloor_index_cluster %}
+{% set deployer_ip = 192.168.x.x %}
+{% set deployer_port = 8089 %}
+{% set search_head_1_ip = 192.168.x.x %}
+{% set search_head_2_ip = 192.168.x.x %}
+{% set search_head_3_ip = 192.168.x.x %}
+{% set search_head_replication_port = 6667 %}
