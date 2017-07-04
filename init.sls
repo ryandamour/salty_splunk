@@ -28,7 +28,7 @@ splunk_cleanup:
     - onlyif:
       - ls /opt/splunk
 
-{% if grains['id'].startswith('splunk-indexer') %}
+{% if grains['id'].startswith('splunk-index') %}
 
 {% for i in '9887','9997','8089','8000' %}
 firewall_indexer_modify_{{i}}:
@@ -38,8 +38,12 @@ firewall_indexer_modify_{{i}}:
 
 enable_index_cluster:
   cmd.run:
-    - name: /opt/splunk/bin/splunk edit cluster-config -mode slave -master_uri https://{{ variables.master_ip_address }}:8089 -replication_port 9887 -secret {{ variables.cluster_secret }} -cluster_label {{ variables.index_cluster_label }}
+    - name: /opt/splunk/bin/splunk edit cluster-config -mode slave -master_uri https://{{ variables.master_ip }}:8089 -replication_port 9887 -secret {{ variables.cluster_secret }} -cluster_label {{ variables.index_cluster_label }} -auth admin:changeme
     - user: splunk 
+
+restart_indexer:
+  cmd.run:
+    - name: systemctl restart splunk
  
 {% endif %}
 
@@ -55,6 +59,10 @@ enable_master_node:
   cmd.run:
     - name: /opt/splunk/bin/splunk edit cluster-config -mode master -replication_factor {{ variables.index_rep_factor }} -search_factor {{ variables.index_search_factor }} -secret {{ variables.cluster_secret }} -cluster_label {{ variables.index_cluster_label }}
     - user: splunk
+
+restart_master:
+  cmd.run:
+    - name: systemctl restart splunk
 
 {% endif %}
 
@@ -75,7 +83,7 @@ firewall_master_modify_{{i}}:
 
 restart_deployer:
   cmd.run:
-    - name: /opt/splunk/bin/splunk restart
+    - name: systemctl restart splunk 
 
 {% endif %}
 
@@ -94,9 +102,16 @@ init_searchhead1:
   cmd.run:
     - name: /opt/splunk/bin/splunk init shcluster-config -auth admin:changeme -mgmt_uri https://{{ variables.search_head_1_ip }}:{{ variables.deployer_port }} -replication_port 6667 -replication_factor {{ variables.rep_factor }} -conf_deploy_fetch_url https://{{ variables.deployer_ip }}:8089 -secret {{ variables.cluster_secret }} -shcluster_label {{ variables.sh_cluster_label }}
     - user: splunk
+
 restart_searchhead1:
   cmd.run:
-    - name: /opt/splunk/bin/splunk restart
+    - name: systemctl restart splunk
+
+sh1_to_index_cluster:
+  cmd.run:
+    - name: /opt/splunk/bin/splunk edit cluster-config -mode searchhead -master_uri https://{{ variables.master_ip }}:8089 -secret {{ variables.cluster_secret }} -auth admin:changeme
+    - user: splunk
+
 
 {% endif %}
 
@@ -105,6 +120,16 @@ init_searchhead2:
   cmd.run:
     - name: /opt/splunk/bin/splunk init shcluster-config -auth admin:changeme -mgmt_uri https://{{ variables.search_head_2_ip }}:{{ variables.deployer_port }} -replication_port 6667 -replication_factor {{ variables.rep_factor }} -conf_deploy_fetch_url https://{{ variables.deployer_ip }}:8089 -secret {{ variables.cluster_secret }} -shcluster_label {{ variables.sh_cluster_label }}
     - user: splunk
+
+restart_searchhead2:
+  cmd.run:
+    - name: systemctl restart splunk
+
+sh2_to_index_cluster:
+  cmd.run:
+    - name: /opt/splunk/bin/splunk edit cluster-config -mode searchhead -master_uri https://{{ variables.master_ip }}:8089 -secret {{ variables.cluster_secret }} -auth admin:changeme
+    - user: splunk
+
 {% endif %}
 
 {% if grains['id'].startswith('splunk-searchhead3') %}
@@ -117,4 +142,14 @@ init_searchhead3:
 elect_captain:
   cmd.run:
     - name: /opt/splunk/bin/splunk bootstrap shcluster-captain -servers_list "https://{{ variables.search_head_1_ip }}:8089, https://{{variables.search_head_2_ip }}:8089, https://{{ variables.search_head_3_ip }}:8089" -auth admin:changeme 
+
+restart_searchhead3:
+  cmd.run:
+    - name: systemctl restart splunk
+
+sh3_to_index_cluster:
+  cmd.run:
+    - name: /opt/splunk/bin/splunk edit cluster-config -mode searchhead -master_uri https://{{ variables.master_ip }}:8089 -secret {{ variables.cluster_secret }} -auth admin:changeme 
+    - user: splunk
+
 {% endif %}
