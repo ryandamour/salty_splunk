@@ -1,4 +1,4 @@
-{% import 'variables.salt' as variables with context %}
+{% import 'splunk/files/variables.jinja' as variables with context %}
 /usr/local/src/splunk-6.6.0-1c4f3bbe1aea-linux-2.6-x86_64.rpm:
   file.managed:
     - source: salt://splunk/files/splunk-6.6.0-1c4f3bbe1aea-linux-2.6-x86_64.rpm
@@ -66,7 +66,7 @@ firewall_master_modify_{{i}}:
     - name: firewall-cmd --permanent --add-port={{i}}/tcp && firewall-cmd --reload
 {% endfor %}
 
-enable_deployer:
+/opt/splunk/etc/system/local/server.conf:
   file.append:
     - text:
       - [shclustering]
@@ -92,7 +92,7 @@ firewall_search_head_modify_{{i}}:
 {% if grains['id'].startswith('splunk-searchhead1') %}
 init_searchhead1:
   cmd.run:
-    - name: /opt/splunk/bin/splunk init shcluster-config -auth splunk:{{ variables.splunk_password }} -mgmt_uri {{ variables.search_head_1_ip }}:{{ variables.deployer_port }} -replication_port {{ variables.replication_port }} -replication_factor {{ variables.replication_factor }} -conf_deploy_fetch_url -secret {{ variables.cluster_secret }} -shcluster_label {{ variables.sh_cluster_label }}
+    - name: /opt/splunk/bin/splunk init shcluster-config -auth admin:changeme -mgmt_uri https://{{ variables.search_head_1_ip }}:{{ variables.deployer_port }} -replication_port 6667 -replication_factor {{ variables.rep_factor }} -conf_deploy_fetch_url https://{{ variables.deployer_ip }}:8089 -secret {{ variables.cluster_secret }} -shcluster_label {{ variables.sh_cluster_label }}
     - user: splunk
 restart_searchhead1:
   cmd.run:
@@ -103,7 +103,7 @@ restart_searchhead1:
 {% if grains['id'].startswith('splunk-searchhead2') %}
 init_searchhead2:
   cmd.run:
-    - name: /opt/splunk/bin/splunk init shcluster-config -auth splunk:{{ variables.splunk_password }} -mgmt_uri {{ variables.search_head_2_ip }}:{{ variables.deployer_port }} -replication_port {{ variables.replication_port }} -replication_factor {{ variables.replication_factor }} -conf_deploy_fetch_url -secret {{ variables.cluster_secret }} -shcluster_label {{ variables.sh_cluster_label }}
+    - name: /opt/splunk/bin/splunk init shcluster-config -auth admin:changeme -mgmt_uri https://{{ variables.search_head_2_ip }}:{{ variables.deployer_port }} -replication_port 6667 -replication_factor {{ variables.rep_factor }} -conf_deploy_fetch_url https://{{ variables.deployer_ip }}:8089 -secret {{ variables.cluster_secret }} -shcluster_label {{ variables.sh_cluster_label }}
     - user: splunk
 {% endif %}
 
@@ -111,10 +111,10 @@ init_searchhead2:
 
 init_searchhead3:
   cmd.run:
-    - name: /opt/splunk/bin/splunk init shcluster-config -auth splunk:{{ variables.splunk_password }} -mgmt_uri {{ variables.search_head_3_ip }}:{{ variables.deployer_port }} -replication_port {{ variables.replication_port }} -replication_factor {{ variables.replication_factor }} -conf_deploy_fetch_url -secret {{ variables.cluster_secret }} -shcluster_label {{ variables.sh_cluster_label }}
+    - name: /opt/splunk/bin/splunk init shcluster-config -auth admin:changeme -mgmt_uri https://{{ variables.search_head_3_ip }}:{{ variables.deployer_port }} -replication_port 6667 -replication_factor {{ variables.rep_factor }} -conf_deploy_fetch_url https://{{ variables.deployer_ip }}:8089 -secret {{ variables.cluster_secret }} -shcluster_label {{ variables.sh_cluster_label }}
     - user: splunk
 
 elect_captain:
   cmd.run:
-    - name: /opt/splunk/bin/splunk bootstrap shcluster-captain -servers_list "{{ variables.search_head_1_ip }}:8089, {{variables.search_head_2_ip }}:8089, {{ variables.search_head_3_ip }}:8089"
+    - name: /opt/splunk/bin/splunk bootstrap shcluster-captain -servers_list "https://{{ variables.search_head_1_ip }}:8089, https://{{variables.search_head_2_ip }}:8089, https://{{ variables.search_head_3_ip }}:8089" -auth admin:changeme 
 {% endif %}
