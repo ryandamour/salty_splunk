@@ -57,7 +57,7 @@ firewall_master_modify_{{i}}:
 
 enable_master_node:
   cmd.run:
-    - name: /opt/splunk/bin/splunk edit cluster-config -mode master -replication_factor {{ variables.index_rep_factor }} -search_factor {{ variables.index_search_factor }} -secret {{ variables.cluster_secret }} -cluster_label {{ variables.index_cluster_label }}
+    - name: /opt/splunk/bin/splunk edit cluster-config -mode master -replication_factor {{ variables.index_rep_factor }} -search_factor {{ variables.index_search_factor }} -secret {{ variables.cluster_secret }} -cluster_label {{ variables.index_cluster_label }} -auth admin:changeme
     - user: splunk
 
 restart_master:
@@ -141,7 +141,7 @@ init_searchhead3:
 
 elect_captain:
   cmd.run:
-    - name: /opt/splunk/bin/splunk bootstrap shcluster-captain -servers_list "https://{{ variables.search_head_1_ip }}:8089, https://{{variables.search_head_2_ip }}:8089, https://{{ variables.search_head_3_ip }}:8089" -auth admin:changeme 
+    - name: /opt/splunk/bin/splunk bootstrap shcluster-captain -servers_list "https://{{ variables.search_head_1_ip }}:8089, https://{{variables.search_head_2_ip }}:8089, https://{{ variables.search_head_3_ip }}:8089" -auth admin:changeme
 
 restart_searchhead3:
   cmd.run:
@@ -149,7 +149,7 @@ restart_searchhead3:
 
 sh3_to_index_cluster:
   cmd.run:
-    - name: /opt/splunk/bin/splunk edit cluster-config -mode searchhead -master_uri https://{{ variables.master_ip }}:8089 -secret {{ variables.cluster_secret }} -auth admin:changeme 
+    - name: /opt/splunk/bin/splunk edit cluster-config -mode searchhead -master_uri https://{{ variables.master_ip }}:8089 -secret {{ variables.cluster_secret }} -auth admin:changeme
     - user: splunk
 
 {% endif %}
